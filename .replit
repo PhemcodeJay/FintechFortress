@@ -1,60 +1,74 @@
 modules = ["nodejs-20", "web", "postgresql-16"]
+
+# Dev command (what you press "Run")
 run = "npm run dev"
+
+# Hide unnecessary files in the file tree
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
 
+# ──────────────────────────────────────────────
+# DEPLOYMENT SETTINGS – THIS IS THE FIX
+# ──────────────────────────────────────────────
 [deployment]
 deploymentTarget = "autoscale"
+
+# Build the Vite frontend
 build = ["sh", "-c", "npm run build"]
+
+# Serve the built React app as static files
 publicDir = "dist/public"
-run = ["sh", "-c", "npm start"]
 
-[[ports]]
-localPort = 5000
-externalPort = 80
+# This is the single most important line → fixes 404 on refresh
+fallbackFile = "/index.html"
 
+# Start your backend server after the build
+run = ["sh", "-c", "node server/index.js"]
+# ↑↑↑ Change "server/index.js" to wherever your server entry file is
+#     (common names: server/index.ts, server/main.ts, etc.)
+
+# ──────────────────────────────────────────────
+# PORTS
+# ──────────────────────────────────────────────
+# Frontend (static) → served by Replit on port 80 (public URL)
+# Backend API → available on port 5001 (Replit auto-proxies /api calls)
 [[ports]]
 localPort = 5001
-externalPort = 3000
+externalPort = 443
+type = "http"
 
+# Optional: keep dev server port if you still want hot reload in dev
+[[ports]]
+localPort = 5173
+externalPort = 5173
+
+# ──────────────────────────────────────────────
+# ENVIRONMENT
+# ──────────────────────────────────────────────
 [env]
-PORT = "5000"
+PORT = "5001"          # Your Express server listens here
+NODE_ENV = "production"
 
+# ──────────────────────────────────────────────
+# WORKFLOWS (optional – clean them up)
+# ──────────────────────────────────────────────
 [workflows]
 runButton = "Build and Start"
 
 [[workflows.workflow]]
-name = "Project"
-mode = "parallel"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Start application"
-
-[[workflows.workflow]]
-name = "Start application"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
-
-[[workflows.workflow]]
 name = "Build and Start"
-author = 50391352
 mode = "sequential"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run build"
+  [[workflows.workflow.tasks]]
+  task = "shell.exec"
+  args = "npm run build"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm start"
+  [[workflows.workflow.tasks]]
+  task = "shell.exec"
+  args = "node server/index.js"   # ← same as deployment.run above
+  waitForPort = 5001
 
 [agent]
 mockupState = "FULLSTACK"

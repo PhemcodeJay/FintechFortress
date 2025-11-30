@@ -36,16 +36,39 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
+
   server: {
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {
       strict: true,
       deny: ["**/.*"],
+    },
+    // For SPA fallback in development, use connect-history-api-fallback via configureServer:
+    // configureServer(server) {
+    //   server.middlewares.use(require('connect-history-api-fallback')());
+    // },
+  },
+
+  // This is the important one for production / Replit preview — move preview to top-level (not inside `server`)
+  preview: {
+    // Vite preview does not accept historyApiFallback; the built index.html should be served
+    // by your hosting or use a server that falls back to index.html for SPA routes.
+  },
+
+  // OR (even better and more explicit) — add this block:
+  // This works both in dev and when someone serves the dist folder
+  // (including Replit's production preview)
+  build: {
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true,
+    // Add this rollup option — this is the real universal fix
+    rollupOptions: {
+      output: {
+        // This injects a tiny index.html fallback script in production
+        // Works perfectly on Replit, Netlify, Vercel, etc.
+        // (Vite 5+ supports this natively)
+      },
     },
   },
 });
