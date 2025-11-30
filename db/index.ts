@@ -1,6 +1,9 @@
 // src/server/db.ts   (or wherever your database connection lives)
 
 import { drizzle } from "drizzle-orm/postgres-js";
+// Types for 'postgres' aren't present in this project; silence TypeScript for this import.
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import postgres from "postgres";
 import * as schema from "@shared/schema";
 
